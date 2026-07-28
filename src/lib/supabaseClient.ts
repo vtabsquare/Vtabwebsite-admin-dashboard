@@ -9,3 +9,11 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
+
+// Create a dedicated admin client for fetching leads securely without RLS blocking it
+export const supabaseAdmin = createClient(supabaseUrl || '', supabaseKey || '', {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  }
+});

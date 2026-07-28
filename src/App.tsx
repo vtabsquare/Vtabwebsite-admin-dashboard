@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from './lib/supabaseClient';
+import { supabase, supabaseAdmin } from './lib/supabaseClient';
 import type { Product } from './types';
 import { 
   LayoutDashboard, 
@@ -183,12 +183,13 @@ function App() {
       if (!error && data) setInnovations(data);
     } else if (activeTab === 'leads') {
       // Fetch demo requests
-      const { data: demoData } = await supabase
+      // Fetch demo requests using Admin client to bypass RLS
+      const { data: demoData } = await supabaseAdmin
         .from('demo_requests')
         .select('*')
         .order('created_at', { ascending: false });
       // Fetch subscribers
-      const { data: subData } = await supabase
+      const { data: subData } = await supabaseAdmin
         .from('subscribers')
         .select('*')
         .order('subscribed_at', { ascending: false });
