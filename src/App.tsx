@@ -137,7 +137,7 @@ function App() {
   const fetchData = async () => {
     setLoading(true);
     if (activeTab === 'projects') {
-      const { data, error } = await supabase.from('products').select('*').order('id', { ascending: true });
+      const { data, error } = await supabaseAdmin.from('products').select('*').order('id', { ascending: true });
       if (!error && data) {
         const mappedProducts: Product[] = data.map(item => {
           let demoSnippet: any = item.demo_snippet || item.demoSnippet;
@@ -176,10 +176,10 @@ function App() {
         setProjects(mappedProducts);
       }
     } else if (activeTab === 'employees') {
-      const { data, error } = await supabase.from('ai_employees').select('*').order('id', { ascending: true });
+      const { data, error } = await supabaseAdmin.from('ai_employees').select('*').order('id', { ascending: true });
       if (!error && data) setEmployees(data);
     } else if (activeTab === 'innovations') {
-      const { data, error } = await supabase.from('innovations').select('*').order('id', { ascending: true });
+      const { data, error } = await supabaseAdmin.from('innovations').select('*').order('id', { ascending: true });
       if (!error && data) setInnovations(data);
     } else if (activeTab === 'leads') {
       // Fetch demo requests
@@ -336,12 +336,12 @@ function App() {
     
     setIsUploading(true);
     const fileName = `custom/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const { data, error } = await supabase.storage.from('product-media').upload(fileName, file);
+    const { data, error } = await supabaseAdmin.storage.from('product-media').upload(fileName, file);
     
     if (error) {
       alert('Upload failed: ' + error.message);
     } else if (data) {
-      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(data.path);
+      const { data: { publicUrl } } = supabaseAdmin.storage.from('product-media').getPublicUrl(data.path);
       setFormData({ ...formData, videoUrl: publicUrl });
     }
     setIsUploading(false);
@@ -422,8 +422,8 @@ function App() {
     }
 
     const { error } = editingId 
-      ? await supabase.from(table).update(payload).eq('id', editingId)
-      : await supabase.from(table).insert([payload]);
+      ? await supabaseAdmin.from(table).update(payload).eq('id', editingId)
+      : await supabaseAdmin.from(table).insert([payload]);
 
     if (error) {
       alert('Error saving record: ' + error.message);
@@ -435,7 +435,7 @@ function App() {
 
   const handleDelete = async (id: string, table: string) => {
     if (confirm(`Are you sure you want to delete this from ${table}?`)) {
-      await supabase.from(table).delete().eq('id', id);
+      await supabaseAdmin.from(table).delete().eq('id', id);
       fetchData();
     }
   };
