@@ -21,7 +21,8 @@ import {
   Building2,
   TrendingUp,
   Zap,
-  LogOut
+  LogOut,
+  Menu
 } from 'lucide-react';
 import { Login } from './components/Login';
 
@@ -51,6 +52,7 @@ function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads'>('projects');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [projects, setProjects] = useState<Product[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -457,19 +459,37 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <LayoutDashboard className="w-4 h-4 text-white" />
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0 transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <LayoutDashboard className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-white font-bold tracking-wide">VTAB ADMIN</span>
           </div>
-          <span className="text-white font-bold tracking-wide">VTAB ADMIN</span>
+          <button
+            className="lg:hidden text-slate-400 hover:text-white p-1 cursor-pointer"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
         <nav className="flex-1 px-4 space-y-2 mt-4">
           <button 
-            onClick={() => setActiveTab('projects')}
+            onClick={() => { setActiveTab('projects'); setSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
               activeTab === 'projects' ? 'bg-blue-600/10 text-blue-400' : 'hover:bg-slate-800/50 hover:text-white'
             }`}
@@ -477,7 +497,7 @@ function App() {
             <Package className="w-5 h-5" /> Projects
           </button>
           <button 
-            onClick={() => setActiveTab('employees')}
+            onClick={() => { setActiveTab('employees'); setSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
               activeTab === 'employees' ? 'bg-blue-600/10 text-blue-400' : 'hover:bg-slate-800/50 hover:text-white'
             }`}
@@ -485,7 +505,7 @@ function App() {
             <Users className="w-5 h-5" /> AI Employees
           </button>
           <button 
-            onClick={() => setActiveTab('innovations')}
+            onClick={() => { setActiveTab('innovations'); setSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
               activeTab === 'innovations' ? 'bg-blue-600/10 text-blue-400' : 'hover:bg-slate-800/50 hover:text-white'
             }`}
@@ -496,7 +516,7 @@ function App() {
           <div className="my-2 border-t border-slate-800" />
           
           <button 
-            onClick={() => setActiveTab('leads')}
+            onClick={() => { setActiveTab('leads'); setSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
               activeTab === 'leads' ? 'bg-emerald-600/10 text-emerald-400' : 'hover:bg-slate-800/50 hover:text-white'
             }`}
@@ -522,56 +542,72 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              {activeTab === 'leads' ? 'Leads & Inquiries' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
-            </h1>
-            <p className="text-sm text-slate-500 font-medium">
-              {activeTab === 'leads' 
-                ? `${leads.length} total leads — demo bookings & newsletter subscribers`
-                : `Manage your VTAB Square ${activeTab} portfolio`
-              }
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder={activeTab === 'leads' ? 'Search leads by name, email, company...' : `Search ${activeTab}...`}
-                value={activeTab === 'leads' ? leadsSearch : undefined}
-                onChange={activeTab === 'leads' ? e => setLeadsSearch(e.target.value) : undefined}
-                className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-72 transition-all"
-              />
+        <header className="bg-white border-b border-slate-200 shadow-sm shrink-0">
+          {/* Top row: hamburger + title + action button */}
+          <div className="flex items-center justify-between px-4 sm:px-8 py-4">
+            <div className="flex items-center gap-3">
+              {/* Hamburger - mobile only */}
+              <button
+                className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+                  {activeTab === 'leads' ? 'Leads & Inquiries' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium hidden sm:block">
+                  {activeTab === 'leads' 
+                    ? `${leads.length} total leads — demo bookings & newsletter subscribers`
+                    : `Manage your VTAB Square ${activeTab} portfolio`
+                  }
+                </p>
+              </div>
             </div>
+            {/* Add button - always visible on right */}
             {activeTab !== 'leads' && (
               <button 
                 onClick={handleOpenNewModal}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> New {activeTab === 'projects' ? 'Project' : activeTab === 'employees' ? 'Employee' : 'Innovation'}
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">New {activeTab === 'projects' ? 'Project' : activeTab === 'employees' ? 'Employee' : 'Innovation'}</span>
+                <span className="sm:hidden">New</span>
               </button>
             )}
             {activeTab === 'leads' && (
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
-                  <Mail className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-[10px] sm:text-xs font-bold">
+                  <Mail className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
                   {leads.filter(l => l.leadType === 'Demo Booking').length} Demos
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  {leads.filter(l => l.leadType === 'Newsletter').length} Subscribers
+                <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] sm:text-xs font-bold">
+                  <TrendingUp className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                  {leads.filter(l => l.leadType === 'Newsletter').length} Subs
                 </span>
               </div>
             )}
           </div>
+          {/* Search bar - full width on mobile */}
+          <div className="px-4 sm:px-8 pb-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder={activeTab === 'leads' ? 'Search leads...' : `Search ${activeTab}...`}
+                value={activeTab === 'leads' ? leadsSearch : undefined}
+                onChange={activeTab === 'leads' ? e => setLeadsSearch(e.target.value) : undefined}
+                className="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full transition-all"
+              />
+            </div>
+          </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-auto p-8 bg-slate-50">
+        <main className="flex-1 overflow-auto p-3 sm:p-6 lg:p-8 bg-slate-50">
 
           {/* Leads View */}
           {activeTab === 'leads' && (
@@ -594,8 +630,8 @@ function App() {
                       (lead.interest_area || '').toLowerCase().includes(q);
                   })
                   .map((lead, idx) => (
-                    <div key={lead.id || idx} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow group">
-                      <div className="flex items-start justify-between gap-4">
+                    <div key={lead.id || idx} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 hover:shadow-md transition-shadow group">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div className="flex items-start gap-4 flex-1 min-w-0">
                           {/* Avatar */}
                           <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
@@ -700,7 +736,8 @@ function App() {
           {/* Projects / Employees / Innovations Table */}
           {activeTab !== 'leads' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[500px]">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
                   <th className="px-6 py-4">Title</th>
@@ -813,6 +850,7 @@ function App() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
           )}
         </main>
@@ -825,7 +863,7 @@ function App() {
           onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
         >
           <div className={`bg-white rounded-3xl shadow-2xl w-full ${activeTab === 'projects' ? 'max-w-3xl' : 'max-w-lg'} overflow-hidden border border-slate-200/50 max-h-[90vh] flex flex-col`}>
-            <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between relative">
+            <div className="px-4 sm:px-8 py-5 sm:py-6 border-b border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between relative">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Record' : `Add New ${activeTab === 'projects' ? 'Project' : activeTab === 'employees' ? 'AI Employee' : 'Innovation'}`}</h2>
                 <p className="text-sm text-slate-500 mt-1">{editingId ? 'Update existing details in database' : 'Deploy a new item to your public website'}</p>
@@ -840,7 +878,7 @@ function App() {
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="p-8 space-y-5 overflow-y-auto">
+            <form onSubmit={handleSave} className="p-4 sm:p-8 space-y-5 overflow-y-auto">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Title / Name</label>
                 <input 
@@ -867,7 +905,7 @@ function App() {
 
               {activeTab === 'projects' && (
                 <>
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Category</label>
                       <select 
