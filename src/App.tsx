@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Zap,
   LogOut,
+  FileText,
   Menu
 } from 'lucide-react';
 import { Login } from './components/Login';
@@ -75,6 +76,7 @@ function App() {
     role?: string;
     status?: string;
     videoUrl?: string;
+    pptUrl?: string;
     imageUrl?: string;
     techStack?: string;
     challenge?: string;
@@ -112,6 +114,7 @@ function App() {
     role: 'Enterprise Automation',
     status: 'In Development',
     videoUrl: '',
+      pptUrl: '',
     imageUrl: ''
   });
 
@@ -229,6 +232,7 @@ function App() {
       role: 'Enterprise Automation',
       status: 'In Development',
       videoUrl: '',
+      pptUrl: '',
       imageUrl: '',
       techStack: 'React, Node.js, Python, Supabase',
       challenge: 'Legacy manual operations cause delays\nHigh operational cost without automation\nLacks real-time data visibility',
@@ -285,6 +289,7 @@ function App() {
         category: item.category || 'Analytics & BI',
         impactMetric: item.impactMetric || item.impact_metric || '',
         videoUrl: existingVideo,
+        pptUrl: detail.pptUrl || item.pptUrl || '',
         techStack: techStackArr.join(', '),
         challenge: challengeArr.join('\n'),
         approach: detail.approach || item.fullDescription || item.full_description || '',
@@ -330,6 +335,24 @@ function App() {
       });
     }
     setIsModalOpen(true);
+  };
+
+
+  const handlePptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    const fileName = `presentations/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const { data, error } = await supabaseAdmin.storage.from('product-media').upload(fileName, file);
+    
+    if (error) {
+      alert('Upload failed: ' + error.message);
+    } else if (data) {
+      const { data: { publicUrl } } = supabaseAdmin.storage.from('product-media').getPublicUrl(data.path);
+      setFormData({ ...formData, pptUrl: publicUrl });
+    }
+    setIsUploading(false);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -387,6 +410,7 @@ function App() {
         demo_snippet: {
           type: 'detailContent',
           videoUrl: formData.videoUrl || '',
+          pptUrl: formData.pptUrl || '',
           approach: approachStr,
           challenge: challengeArr,
           features: featArr,
@@ -1017,6 +1041,53 @@ function App() {
                           type="file" 
                           accept="video/*" 
                           onChange={handleFileUpload} 
+                          disabled={isUploading}
+                          className="hidden" 
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* PPT Upload / URL Section */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-purple-600" />
+                      Presentation URL (PPT/PDF)
+                    </label>
+
+                    <div>
+                      <input 
+                        type="text" 
+                        value={formData.pptUrl || ''}
+                        onChange={e => setFormData({...formData, pptUrl: e.target.value})}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none text-xs font-mono transition-all placeholder:text-slate-400"
+                        placeholder="Paste URL or upload file..."
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 font-medium">OR</span>
+                      <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white border border-dashed border-slate-300 hover:border-purple-500 rounded-lg text-xs font-semibold text-slate-600 hover:text-purple-600 cursor-pointer transition-all">
+                        {isUploading ? (
+                          <>
+                            <div className="w-4 h-4 animate-spin text-purple-600 border-2 border-purple-600 border-t-transparent rounded-full" />
+                            <span>Uploading...</span>
+                          </>
+                        ) : formData.pptUrl ? (
+                          <>
+                            <div className="w-4 h-4 text-green-500 flex items-center justify-center font-bold">✓</div>
+                            <span className="truncate max-w-[180px]">File Attached</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            <span>Upload PPT/PDF</span>
+                          </>
+                        )}
+                        <input 
+                          type="file" 
+                          accept=".ppt,.pptx,.pdf" 
+                          onChange={handlePptUpload} 
                           disabled={isUploading}
                           className="hidden" 
                         />
