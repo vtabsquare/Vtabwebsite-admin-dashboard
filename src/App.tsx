@@ -65,12 +65,15 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [customSubcategories, setCustomSubcategories] = useState<Record<string,string[]>>({});
 
   // Unified Form State for all 3 tabs
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
     category?: string;
+    subcategory?: string;
     impactMetric?: string;
     featured?: boolean;
     role?: string;
@@ -109,6 +112,7 @@ function App() {
     title: '',
     description: '',
     category: 'Analytics & BI',
+    subcategory: '',
     impactMetric: '',
     featured: true,
     role: 'Enterprise Automation',
@@ -167,6 +171,7 @@ function App() {
             shortDescription: item.short_description || item.shortDescription || '',
             fullDescription: item.full_description || item.fullDescription || '',
             category: item.category,
+            subcategory: item.subcategory || '',
             tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : item.tags || [],
             impactMetric: item.impact_metric || item.impactMetric || '',
             keyFeatures: typeof item.key_features === 'string' ? JSON.parse(item.key_features) : item.keyFeatures || item.key_features || [],
@@ -227,6 +232,7 @@ function App() {
       title: '',
       description: '',
       category: 'Analytics & BI',
+      subcategory: '',
       impactMetric: '',
       featured: true,
       role: 'Enterprise Automation',
@@ -287,6 +293,7 @@ function App() {
         title: item.title || '',
         description: item.shortDescription || item.short_description || '',
         category: item.category || 'Analytics & BI',
+        subcategory: item.subcategory || '',
         impactMetric: item.impactMetric || item.impact_metric || '',
         videoUrl: existingVideo,
         pptUrl: detail.pptUrl || item.pptUrl || '',
@@ -400,6 +407,7 @@ function App() {
         short_description: formData.description,
         full_description: approachStr,
         category: formData.category,
+        subcategory: formData.subcategory || null,
         impact_metric: formData.impactMetric,
         icon_name: 'Package',
         featured: formData.featured ?? true,
@@ -932,9 +940,19 @@ function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Category</label>
-                      <select 
+                      <select
                         value={formData.category}
-                        onChange={e => setFormData({...formData, category: e.target.value})}
+                        onChange={e => {
+                          if (e.target.value === '__new__') {
+                            const name = window.prompt('Enter new category name:');
+                            if (name && name.trim()) {
+                              setCustomCategories(prev => [...prev, name.trim()]);
+                              setFormData({...formData, category: name.trim()});
+                            }
+                          } else {
+                            setFormData({...formData, category: e.target.value});
+                          }
+                        }}
                         className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
                       >
                         <option value="Analytics & BI">Analytics & BI</option>
@@ -943,19 +961,66 @@ function App() {
                         <option value="AI Vision & Construction">AI Vision & Construction</option>
                         <option value="Logistics">Logistics</option>
                         <option value="Healthcare">Healthcare</option>
+                        {customCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                        <option value="__new__">➕ Add New Category...</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Impact Metric</label>
-                      <input 
+                      <input
                         required
-                        type="text" 
+                        type="text"
                         value={formData.impactMetric}
                         onChange={e => setFormData({...formData, impactMetric: e.target.value})}
                         className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
                         placeholder="e.g. 50% Faster"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Subcategory <span className="font-normal text-slate-400 normal-case">(optional)</span></label>
+                      <select
+                        value={formData.subcategory || ''}
+                        onChange={e => {
+                          if (e.target.value === '__new__') {
+                            const name = window.prompt(`Enter new subcategory for "${formData.category}":`);
+                            if (name && name.trim()) {
+                              setCustomSubcategories(prev => ({
+                                ...prev,
+                                [formData.category!]: [...(prev[formData.category!] || []), name.trim()]
+                              }));
+                              setFormData({...formData, subcategory: name.trim()});
+                            }
+                          } else {
+                            setFormData({...formData, subcategory: e.target.value});
+                          }
+                        }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
+                      >
+                        <option value="">— None —</option>
+                        {/* Subcategories from existing projects for this category */}
+                        {Array.from(new Set(
+                          projects
+                            .filter(p => p.category === formData.category && (p as any).subcategory)
+                            .map(p => (p as any).subcategory as string)
+                        )).map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                        {/* Custom subcategories added for this category */}
+                        {(customSubcategories[formData.category!] || []).map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                        {/* If current value isn't in either list, show it anyway */}
+                        {formData.subcategory && !projects.some(p => p.category === formData.category && (p as any).subcategory === formData.subcategory) && !(customSubcategories[formData.category!] || []).includes(formData.subcategory) && (
+                          <option value={formData.subcategory}>{formData.subcategory}</option>
+                        )}
+                        <option value="__new__">➕ Add New Subcategory...</option>
+                      </select>
+                      <p className="text-[11px] text-slate-400 mt-1">Appears as a sub-filter under the main category on the website.</p>
+                    </div>
+                    <div></div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-5">
