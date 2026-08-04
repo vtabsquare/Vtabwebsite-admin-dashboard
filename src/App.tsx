@@ -23,7 +23,8 @@ import {
   Zap,
   LogOut,
   FileText,
-  Menu
+  Menu,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Login } from './components/Login';
 
@@ -374,6 +375,23 @@ function App() {
     } else if (data) {
       const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(data.path);
       setFormData({ ...formData, videoUrl: publicUrl });
+    }
+    setIsUploading(false);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const fileName = `images/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const { data, error } = await supabase.storage.from('product-media').upload(fileName, file);
+
+    if (error) {
+      alert('Upload failed: ' + error.message);
+    } else if (data) {
+      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(data.path);
+      setFormData({ ...formData, imageUrl: publicUrl });
     }
     setIsUploading(false);
   };
@@ -1024,16 +1042,6 @@ function App() {
 
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Project Image URL</label>
-                      <input 
-                        type="text" 
-                        value={formData.imageUrl || ''}
-                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
-                        placeholder="https://... or /src/assets/images/..."
-                      />
-                    </div>
-                    <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Show in AI Portfolio</label>
                       <div className="flex items-center gap-3 mt-3">
                         <button
@@ -1052,6 +1060,61 @@ function App() {
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Image Upload / URL Section */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-blue-600" />
+                      Project Image
+                    </label>
+
+                    <div>
+                      <input 
+                        type="text" 
+                        value={formData.imageUrl || ''}
+                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono transition-all placeholder:text-slate-400"
+                        placeholder="https://... or /src/assets/images/..."
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 font-medium">OR</span>
+                      <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white border border-dashed border-slate-300 hover:border-blue-500 rounded-lg text-xs font-semibold text-slate-600 hover:text-blue-600 cursor-pointer transition-all">
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                            <span>Uploading to Storage...</span>
+                          </>
+                        ) : formData.imageUrl ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            <span className="truncate max-w-[180px]">Image Attached</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            <span>Upload Image</span>
+                          </>
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleImageUpload} 
+                          disabled={isUploading}
+                          className="hidden" 
+                        />
+                      </label>
+                    </div>
+
+                    {formData.imageUrl && (
+                      <img 
+                        src={formData.imageUrl} 
+                        alt="Preview" 
+                        className="w-full h-32 object-cover rounded-lg border border-slate-200"
+                      />
+                    )}
                   </div>
 
                   <div>
