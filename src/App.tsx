@@ -24,7 +24,8 @@ import {
   LogOut,
   FileText,
   Menu,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronDown
 } from 'lucide-react';
 import { Login } from './components/Login';
 
@@ -50,6 +51,79 @@ const STREAMING_VIDEOS: Record<string, string> = {
   'hr-analytics-dashboard': `${SUPABASE_MEDIA}/powerbi/google-analytics-dashboard.mp4`,
 };
 
+const CustomDropdown = ({
+  value,
+  onChange,
+  options,
+  onAdd,
+  onDelete,
+  placeholder,
+  disabled
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  onAdd: () => void;
+  onDelete: (val: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <div 
+        className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 outline-none text-sm font-medium transition-all flex justify-between items-center min-h-[42px] ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-300 focus:ring-2 focus:ring-blue-500'}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        tabIndex={disabled ? -1 : 0}
+      >
+        <span className={value ? 'text-slate-900' : 'text-slate-500'}>{value || placeholder}</span>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      {isOpen && !disabled && (
+        <div className="absolute z-[100] top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg py-1">
+          <div 
+            className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-50 cursor-pointer"
+            onClick={() => { onChange(''); setIsOpen(false); }}
+          >
+            — None —
+          </div>
+          {options.map(opt => (
+            <div key={opt} className="flex justify-between items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer group">
+              <span className="flex-1" onClick={() => { onChange(opt); setIsOpen(false); }}>{opt}</span>
+              <button 
+                type="button"
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                onClick={(e) => { e.stopPropagation(); onDelete(opt); }}
+                title="Delete option"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          <div 
+            className="px-4 py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 cursor-pointer flex items-center gap-2 border-t border-slate-100"
+            onClick={() => { onAdd(); setIsOpen(false); }}
+          >
+            <Plus className="w-4 h-4" /> Add New...
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -68,6 +142,8 @@ function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [customSubcategories, setCustomSubcategories] = useState<Record<string,string[]>>({});
+  const [deletedCategories, setDeletedCategories] = useState<string[]>([]);
+  const [deletedSubcategories, setDeletedSubcategories] = useState<string[]>([]);
 
   // Unified Form State for all 3 tabs
   const [formData, setFormData] = useState<{
@@ -224,6 +300,45 @@ function App() {
       ));
     }
     setLoading(false);
+  };
+
+  const handleDeleteCategory = async (catToDelete: string) => {
+    if (!window.confirm(`Are you sure you want to delete the category "${catToDelete}"? This will remove it from all projects.`)) return;
+    
+    setDeletedCategories(prev => [...prev, catToDelete]);
+    setCustomCategories(prev => prev.filter(c => c !== catToDelete));
+    
+    // Update supabase
+    await supabase.from('products').update({ category: '' }).eq('category', catToDelete);
+    fetchData();
+    
+    if (formData.category === catToDelete) {
+      setFormData({ ...formData, category: '' });
+    }
+  };
+
+  const handleDeleteSubcategory = async (subToDelete: string) => {
+    if (!window.confirm(`Are you sure you want to delete the subcategory "${subToDelete}"? This will remove it from all projects in this category.`)) return;
+    
+    setDeletedSubcategories(prev => [...prev, subToDelete]);
+    if (formData.category) {
+      setCustomSubcategories(prev => ({
+        ...prev,
+        [formData.category!]: (prev[formData.category!] || []).filter(s => s !== subToDelete)
+      }));
+    }
+    
+    // Update supabase (only for this category)
+    await supabase.from('products')
+      .update({ subcategory: '' })
+      .eq('category', formData.category)
+      .eq('subcategory', subToDelete);
+      
+    fetchData();
+    
+    if (formData.subcategory === subToDelete) {
+      setFormData({ ...formData, subcategory: '' });
+    }
   };
 
   const handleOpenNewModal = () => {
@@ -957,30 +1072,24 @@ function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Category</label>
-                      <select
-                        value={formData.category}
-                        onChange={e => {
-                          if (e.target.value === '__new__') {
-                            const name = window.prompt('Enter new category name:');
-                            if (name && name.trim()) {
-                              setCustomCategories(prev => [...prev, name.trim()]);
-                              setFormData({...formData, category: name.trim()});
-                            }
-                          } else {
-                            setFormData({...formData, category: e.target.value});
+                      <CustomDropdown
+                        value={formData.category || ''}
+                        onChange={val => setFormData({...formData, category: val})}
+                        options={Array.from(new Set([
+                          'Analytics & BI', 'Enterprise Automation', 'Database & Migration', 'AI Vision & Construction', 'Logistics', 'Healthcare',
+                          ...customCategories,
+                          ...projects.map(p => p.category).filter(Boolean)
+                        ])).filter(c => !deletedCategories.includes(c as string)) as string[]}
+                        onAdd={() => {
+                          const name = window.prompt('Enter new category name:');
+                          if (name && name.trim()) {
+                            setCustomCategories(prev => [...prev, name.trim()]);
+                            setFormData({...formData, category: name.trim()});
                           }
                         }}
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
-                      >
-                        <option value="Analytics & BI">Analytics & BI</option>
-                        <option value="Enterprise Automation">Enterprise Automation</option>
-                        <option value="Database & Migration">Database & Migration</option>
-                        <option value="AI Vision & Construction">AI Vision & Construction</option>
-                        <option value="Logistics">Logistics</option>
-                        <option value="Healthcare">Healthcare</option>
-                        {customCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                        <option value="__new__">➕ Add New Category...</option>
-                      </select>
+                        onDelete={handleDeleteCategory}
+                        placeholder="Select a category..."
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Impact Metric</label>
@@ -998,43 +1107,28 @@ function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Subcategory <span className="font-normal text-slate-400 normal-case">(optional)</span></label>
-                      <select
+                      <CustomDropdown
+                        disabled={!formData.category}
                         value={formData.subcategory || ''}
-                        onChange={e => {
-                          if (e.target.value === '__new__') {
-                            const name = window.prompt(`Enter new subcategory for "${formData.category}":`);
-                            if (name && name.trim()) {
-                              setCustomSubcategories(prev => ({
-                                ...prev,
-                                [formData.category!]: [...(prev[formData.category!] || []), name.trim()]
-                              }));
-                              setFormData({...formData, subcategory: name.trim()});
-                            }
-                          } else {
-                            setFormData({...formData, subcategory: e.target.value});
+                        onChange={val => setFormData({...formData, subcategory: val})}
+                        options={Array.from(new Set([
+                          ...projects.filter(p => p.category === formData.category && (p as any).subcategory).map(p => (p as any).subcategory as string),
+                          ...(formData.category ? customSubcategories[formData.category] || [] : []),
+                          ...(formData.subcategory && !projects.some(p => p.category === formData.category && (p as any).subcategory === formData.subcategory) && !(formData.category && (customSubcategories[formData.category] || []).includes(formData.subcategory)) ? [formData.subcategory] : [])
+                        ])).filter(s => !deletedSubcategories.includes(s)) as string[]}
+                        onAdd={() => {
+                          const name = window.prompt(`Enter new subcategory for "${formData.category}":`);
+                          if (name && name.trim()) {
+                            setCustomSubcategories(prev => ({
+                              ...prev,
+                              [formData.category!]: [...(prev[formData.category!] || []), name.trim()]
+                            }));
+                            setFormData({...formData, subcategory: name.trim()});
                           }
                         }}
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
-                      >
-                        <option value="">— None —</option>
-                        {/* Subcategories from existing projects for this category */}
-                        {Array.from(new Set(
-                          projects
-                            .filter(p => p.category === formData.category && (p as any).subcategory)
-                            .map(p => (p as any).subcategory as string)
-                        )).map(s => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                        {/* Custom subcategories added for this category */}
-                        {(customSubcategories[formData.category!] || []).map(s => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                        {/* If current value isn't in either list, show it anyway */}
-                        {formData.subcategory && !projects.some(p => p.category === formData.category && (p as any).subcategory === formData.subcategory) && !(customSubcategories[formData.category!] || []).includes(formData.subcategory) && (
-                          <option value={formData.subcategory}>{formData.subcategory}</option>
-                        )}
-                        <option value="__new__">➕ Add New Subcategory...</option>
-                      </select>
+                        onDelete={handleDeleteSubcategory}
+                        placeholder={formData.category ? "Select a subcategory..." : "Select a category first..."}
+                      />
                       <p className="text-[11px] text-slate-400 mt-1">Appears as a sub-filter under the main category on the website.</p>
                     </div>
                     <div></div>
