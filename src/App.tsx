@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Product } from './types';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { 
   LayoutDashboard, 
   Package, 
@@ -25,7 +26,8 @@ import {
   FileText,
   Menu,
   Image as ImageIcon,
-  ChevronDown
+  ChevronDown,
+  BarChart2
 } from 'lucide-react';
 import { Login } from './components/Login';
 
@@ -127,7 +129,7 @@ const CustomDropdown = ({
 function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics'>('projects');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [projects, setProjects] = useState<Product[]>([]);
@@ -693,6 +695,19 @@ function App() {
               </span>
             )}
           </button>
+
+          <div className="my-2 border-t border-slate-800" />
+
+          <button 
+            onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
+              activeTab === 'analytics' ? 'bg-blue-600/10 text-blue-400' : 'hover:bg-slate-800/50 hover:text-white'
+            }`}
+          >
+            <BarChart2 className="w-5 h-5" />
+            <span>Visitors</span>
+            <span className="ml-auto text-[10px] font-bold bg-blue-500 text-white rounded-full px-2 py-0.5">LIVE</span>
+          </button>
         </nav>
 
         <div className="p-4 mt-auto border-t border-slate-800">
@@ -721,18 +736,20 @@ function App() {
               </button>
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
-                  {activeTab === 'leads' ? 'Leads & Inquiries' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
+                  {activeTab === 'leads' ? 'Leads & Inquiries' : activeTab === 'analytics' ? 'Visitor Analytics' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium hidden sm:block">
                   {activeTab === 'leads' 
                     ? `${leads.length} total leads — demo bookings & newsletter subscribers`
+                    : activeTab === 'analytics'
+                    ? 'Real-time visitor insights from www.vtabsquare.com'
                     : `Manage your VTAB Square ${activeTab} portfolio`
                   }
                 </p>
               </div>
             </div>
             {/* Add button - always visible on right */}
-            {activeTab !== 'leads' && (
+            {activeTab !== 'leads' && activeTab !== 'analytics' && (
               <button 
                 onClick={handleOpenNewModal}
                 className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
@@ -755,7 +772,8 @@ function App() {
               </div>
             )}
           </div>
-          {/* Search bar - full width on mobile */}
+          {/* Search bar - hidden on analytics tab */}
+          {activeTab !== 'analytics' && (
           <div className="px-4 sm:px-8 pb-3">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -768,10 +786,16 @@ function App() {
               />
             </div>
           </div>
+          )}
         </header>
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-3 sm:p-6 lg:p-8 bg-slate-50">
+
+          {/* Analytics View */}
+          {activeTab === 'analytics' && (
+            <AnalyticsDashboard />
+          )}
 
           {/* Leads View */}
           {activeTab === 'leads' && (
