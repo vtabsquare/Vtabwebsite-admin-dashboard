@@ -572,8 +572,8 @@ export function AnalyticsDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xl leading-none">{flagEmoji(s.country_code)}</span>
-                          <span className="text-sm font-semibold text-slate-800 truncate">
-                            {[s.city, s.country].filter(Boolean).join(', ') || 'Unknown'}
+                          <span className="text-sm font-semibold text-slate-800 truncate" title={[s.city, s.region, s.country].filter(Boolean).join(', ')}>
+                            {[s.city, s.region, s.country].filter(Boolean).join(', ') || 'Unknown'}
                           </span>
                           {isLive && <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shrink-0" />}
                         </div>
@@ -602,9 +602,11 @@ export function AnalyticsDashboard() {
                       <div className="col-span-1">
                         <div className="flex items-center gap-1.5">
                           <span className="text-base leading-none">{flagEmoji(s.country_code)}</span>
-                          <div>
-                            <div className="font-medium text-slate-700 truncate max-w-[80px]">{s.city || s.country || 'Unknown'}</div>
-                            <div className="text-slate-400">{s.country || '—'}</div>
+                          <div className="min-w-0" title={[s.city, s.region, s.country].filter(Boolean).join(', ')}>
+                            <div className="font-medium text-slate-700 truncate max-w-[110px]">
+                              {[s.city, s.region].filter(Boolean).join(', ') || 'Unknown Location'}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-medium">{s.country || '—'}</div>
                           </div>
                         </div>
                       </div>
