@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import {
   Users, Globe, Globe2, Monitor, Smartphone, Tablet,
   TrendingUp, Clock, Eye, Zap, RefreshCw,
-  ChevronDown, ChevronUp, MapPin,
+  ChevronDown, ChevronUp,
   Activity, BarChart2, ArrowUpRight, Wifi
 } from 'lucide-react';
 
@@ -32,6 +32,7 @@ interface VisitorSession {
   started_at: string;
   last_seen: string;
   ended_at: string | null;
+  timezone: string | null;
 }
 
 interface PageView {
@@ -724,23 +725,23 @@ export function AnalyticsDashboard() {
                                           <div className="text-[10px] text-slate-500">
                                             {isScroll && (
                                               <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2 py-1 rounded w-fit">
-                                                Reached <strong>{ev.event_data.percent}%</strong> of {ev.event_data.page || 'page'}
+                                                Reached <strong>{String(ev.event_data.percent)}%</strong> of {String(ev.event_data.page || 'page')}
                                               </div>
                                             )}
                                             {isSectionEnter && (
                                               <div className="flex items-center gap-1.5 bg-indigo-50/50 text-indigo-600 px-2 py-1 rounded w-fit border border-indigo-100">
-                                                Entered <strong>{ev.event_data.section}</strong> section
+                                                Entered <strong>{String(ev.event_data.section)}</strong> section
                                               </div>
                                             )}
                                             {isSectionExit && (
                                               <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-2 py-1 rounded w-fit">
-                                                Viewed <strong>{ev.event_data.section}</strong> for {ev.event_data.seconds_spent}s
+                                                Viewed <strong>{String(ev.event_data.section)}</strong> for {String(ev.event_data.seconds_spent)}s
                                               </div>
                                             )}
                                             {isClick && (
                                               <div className="flex flex-col gap-0.5 mt-1">
                                                 <div className="text-slate-800 font-bold bg-amber-50 text-amber-700 px-2 py-1 rounded w-fit border border-amber-100">
-                                                  Clicked: {ev.event_data.element}
+                                                  Clicked: {String(ev.event_data.element)}
                                                 </div>
                                                 {Object.keys(ev.event_data).filter(k => k !== 'element' && k !== 'page').length > 0 && (
                                                   <div className="text-slate-400 truncate pl-1">
