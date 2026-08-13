@@ -129,12 +129,13 @@ const CustomDropdown = ({
 function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers'>('projects');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [projects, setProjects] = useState<Product[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [innovations, setInnovations] = useState<any[]>([]);
+  const [careers, setCareers] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [leadsSearch, setLeadsSearch] = useState('');
   
@@ -187,6 +188,12 @@ function App() {
     samplePrompt?: string;
     sampleOutput?: string;
     badge?: string;
+    // Careers
+    department?: string;
+    location?: string;
+    type?: string;
+    experience?: string;
+    requirements?: string;
   }>({
     title: '',
     description: '',
@@ -270,6 +277,9 @@ function App() {
     } else if (activeTab === 'innovations') {
       const { data, error } = await supabase.from('innovations').select('*').order('id', { ascending: true });
       if (!error && data) setInnovations(data);
+    } else if (activeTab === 'careers') {
+      const { data, error } = await supabase.from('career_roles').select('*').order('created_at', { ascending: false });
+      if (!error && data) setCareers(data);
     } else if (activeTab === 'leads') {
       // Fetch demo requests
       const { data: demoData } = await supabase
@@ -383,7 +393,13 @@ function App() {
       capabilities: '',
       samplePrompt: '',
       sampleOutput: '',
-      badge: 'Alpha Testing'
+      badge: 'Alpha Testing',
+      // Careers
+      department: '',
+      location: '',
+      type: 'Full-time',
+      experience: '',
+      requirements: ''
     });
     setIsModalOpen(true);
   };
@@ -456,6 +472,17 @@ function App() {
         tagline: item.tagline || '',
         highlights: hlArr.join('\n'),
         icon: item.icon || 'Cpu'
+      });
+    } else if (activeTab === 'careers') {
+      const reqArr: string[] = Array.isArray(item.requirements) ? item.requirements : (typeof item.requirements === 'string' ? JSON.parse(item.requirements || '[]') : []);
+      setFormData({
+        title: item.title || '',
+        description: item.description || '',
+        department: item.department || '',
+        location: item.location || '',
+        type: item.type || 'Full-time',
+        experience: item.experience || '',
+        requirements: reqArr.join('\n')
       });
     }
     setIsModalOpen(true);
@@ -587,6 +614,19 @@ function App() {
         status: formData.status || 'In Development'
       };
       if (!editingId) payload.id = id;
+    } else if (activeTab === 'careers') {
+      table = 'career_roles';
+      const reqArr = formData.requirements ? formData.requirements.split('\n').map(s => s.trim()).filter(Boolean) : [];
+      payload = {
+        title: formData.title,
+        description: formData.description,
+        department: formData.department,
+        location: formData.location,
+        type: formData.type,
+        experience: formData.experience,
+        requirements: reqArr
+      };
+      if (!editingId) payload.id = id;
     }
 
     const { error } = editingId 
@@ -673,10 +713,18 @@ function App() {
           <button 
             onClick={() => { setActiveTab('innovations'); setSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
-              activeTab === 'innovations' ? 'bg-blue-600/10 text-blue-400' : 'hover:bg-slate-800/50 hover:text-white'
+              activeTab === 'innovations' ? 'bg-amber-600/10 text-amber-500' : 'hover:bg-slate-800/50 hover:text-white'
             }`}
           >
-            <Lightbulb className="w-5 h-5" /> Innovations
+            <Lightbulb className="w-5 h-5" /> Labs & Innovations
+          </button>
+          <button 
+            onClick={() => { setActiveTab('careers'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
+              activeTab === 'careers' ? 'bg-teal-600/10 text-teal-400' : 'hover:bg-slate-800/50 hover:text-white'
+            }`}
+          >
+            <Users className="w-5 h-5" /> Careers
           </button>
 
           <div className="my-2 border-t border-slate-800" />
@@ -932,13 +980,15 @@ function App() {
                   {activeTab === 'projects' && <th className="px-6 py-4">Category</th>}
                   {activeTab === 'employees' && <th className="px-6 py-4">Role</th>}
                   {activeTab === 'innovations' && <th className="px-6 py-4">Status</th>}
+                  {activeTab === 'careers' && <th className="px-6 py-4">Department</th>}
+                  {activeTab === 'careers' && <th className="px-6 py-4">Location</th>}
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-medium">Loading database...</td></tr>
-                ) : (activeTab === 'projects' && projects.length === 0) || (activeTab === 'employees' && employees.length === 0) || (activeTab === 'innovations' && innovations.length === 0) ? (
+                ) : (activeTab === 'projects' && projects.length === 0) || (activeTab === 'employees' && employees.length === 0) || (activeTab === 'innovations' && innovations.length === 0) || (activeTab === 'careers' && careers.length === 0) ? (
                   <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-medium">No records found.</td></tr>
                 ) : (
                   <>
@@ -1034,6 +1084,42 @@ function App() {
                         </td>
                       </tr>
                     ))}
+
+                    {activeTab === 'careers' && careers.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
+                              <Users className="w-5 h-5 text-teal-600" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-900">{item.title}</p>
+                              <p className="text-xs text-slate-500 truncate w-64">{item.type} • {item.experience}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-teal-100 text-teal-700 border border-teal-200">
+                            {item.department}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-500">
+                            {item.location}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleEdit(item)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Edit">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(item.id, 'career_roles')} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Delete">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </>
                 )}
               </tbody>
@@ -1053,7 +1139,7 @@ function App() {
           <div className={`bg-white rounded-3xl shadow-2xl w-full ${activeTab === 'projects' ? 'max-w-3xl' : 'max-w-lg'} overflow-hidden border border-slate-200/50 max-h-[90vh] flex flex-col`}>
             <div className="px-4 sm:px-8 py-5 sm:py-6 border-b border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between relative">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Record' : `Add New ${activeTab === 'projects' ? 'Project' : activeTab === 'employees' ? 'AI Employee' : 'Innovation'}`}</h2>
+                <h2 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Record' : `Add New ${activeTab === 'projects' ? 'Project' : activeTab === 'employees' ? 'AI Employee' : activeTab === 'careers' ? 'Career Role' : 'Innovation'}`}</h2>
                 <p className="text-sm text-slate-500 mt-1">{editingId ? 'Update existing details in database' : 'Deploy a new item to your public website'}</p>
               </div>
               <button 
@@ -1573,6 +1659,65 @@ function App() {
                         placeholder="Decision: Approved v2.4 launch date for Oct 15..."
                       />
                     </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'careers' && (
+                <>
+                  <div className="grid grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Department</label>
+                      <input 
+                        type="text" 
+                        value={formData.department || ''}
+                        onChange={e => setFormData({...formData, department: e.target.value})}
+                        className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
+                        placeholder="e.g. AI Engineering"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Location</label>
+                      <input 
+                        type="text" 
+                        value={formData.location || ''}
+                        onChange={e => setFormData({...formData, location: e.target.value})}
+                        className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
+                        placeholder="e.g. Hybrid / Remote"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Employment Type</label>
+                      <input 
+                        type="text" 
+                        value={formData.type || ''}
+                        onChange={e => setFormData({...formData, type: e.target.value})}
+                        className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
+                        placeholder="e.g. Full-time"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Experience</label>
+                      <input 
+                        type="text" 
+                        value={formData.experience || ''}
+                        onChange={e => setFormData({...formData, experience: e.target.value})}
+                        className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
+                        placeholder="e.g. 4+ Years"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Requirements (one per line)</label>
+                    <textarea 
+                      rows={5}
+                      value={formData.requirements || ''}
+                      onChange={e => setFormData({...formData, requirements: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
+                      placeholder="Requirement 1\nRequirement 2"
+                    />
                   </div>
                 </>
               )}

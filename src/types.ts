@@ -15,3 +15,14 @@ export interface Product {
   demoSnippet?: any;
   detailContent?: any;
 }
+
+export interface CareerRole {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  experience: string;
+  description: string;
+  requirements: string[];
+}
