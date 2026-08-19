@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Product } from './types';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { IoTEditor } from './components/IoTEditor';
 import { 
+  Wifi,
   LayoutDashboard, 
   Package, 
   Users, 
@@ -129,7 +131,7 @@ const CustomDropdown = ({
 function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers' | 'iot'>('projects');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [projects, setProjects] = useState<Product[]>([]);
@@ -726,6 +728,14 @@ function App() {
           >
             <Users className="w-5 h-5" /> Careers
           </button>
+          <button 
+            onClick={() => { setActiveTab('iot'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
+              activeTab === 'iot' ? 'bg-cyan-600/10 text-cyan-400' : 'hover:bg-slate-800/50 hover:text-white'
+            }`}
+          >
+            <Wifi className="w-5 h-5" /> IoT & Edge AI
+          </button>
 
           <div className="my-2 border-t border-slate-800" />
           
@@ -743,8 +753,6 @@ function App() {
               </span>
             )}
           </button>
-
-          <div className="my-2 border-t border-slate-800" />
 
           <button 
             onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
@@ -839,6 +847,12 @@ function App() {
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-3 sm:p-6 lg:p-8 bg-slate-50">
+
+          
+          {/* IoT View */}
+          {activeTab === 'iot' && (
+            <IoTEditor />
+          )}
 
           {/* Analytics View */}
           {activeTab === 'analytics' && (

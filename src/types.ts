@@ -26,3 +26,31 @@ export interface CareerRole {
   description: string;
   requirements: string[];
 }
+
+export interface IoTCapability {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface IoTSignal {
+  icon: string;
+  label: string;
+  detail: string;
+  color: string;
+}
+
+export interface IoTContent {
+  id: string;
+  header_badge: string;
+  header_title: string;
+  header_highlight: string;
+  header_description: string;
+  reference_app_badge: string;
+  reference_app_title: string;
+  benefits: string[];
+  capabilities: IoTCapability[];
+  signals: IoTSignal[];
+  updated_at?: string;
+}
+
