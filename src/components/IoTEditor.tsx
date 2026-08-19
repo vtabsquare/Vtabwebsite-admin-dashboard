@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Loader2, Plus, Trash2, Save } from 'lucide-react';
-import type { IoTContent, IoTCapability, IoTSignal } from '../types';
+import type { IoTContent } from '../types';
 
 export const IoTEditor: React.FC = () => {
   const [data, setData] = useState<IoTContent | null>(null);
