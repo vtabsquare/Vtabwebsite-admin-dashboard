@@ -51,6 +51,7 @@ export interface IoTContent {
   benefits: string[];
   capabilities: IoTCapability[];
   signals: IoTSignal[];
+  demo_video_url?: string | null;
   updated_at?: string;
 }
 
