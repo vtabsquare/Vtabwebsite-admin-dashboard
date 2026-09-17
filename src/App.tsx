@@ -805,7 +805,7 @@ function App() {
               </div>
             </div>
             {/* Add button - always visible on right */}
-            {activeTab !== 'leads' && activeTab !== 'analytics' && (
+            {activeTab !== 'leads' && activeTab !== 'analytics' && activeTab !== 'iot' && (
               <button 
                 onClick={handleOpenNewModal}
                 className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
@@ -828,8 +828,8 @@ function App() {
               </div>
             )}
           </div>
-          {/* Search bar - hidden on analytics tab */}
-          {activeTab !== 'analytics' && (
+          {/* Search bar - hidden on analytics and iot tabs */}
+          {activeTab !== 'analytics' && activeTab !== 'iot' && (
           <div className="px-4 sm:px-8 pb-3">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
