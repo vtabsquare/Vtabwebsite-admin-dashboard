@@ -3,6 +3,7 @@ import { supabase } from './lib/supabaseClient';
 import type { Product } from './types';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { IoTEditor } from './components/IoTEditor';
+import { DashboardsManager } from './components/DashboardsManager';
 import { 
   Wifi,
   LayoutDashboard, 
@@ -33,7 +34,8 @@ import {
 } from 'lucide-react';
 import { Login } from './components/Login';
 
-const SUPABASE_MEDIA = 'https://jqxqujrldlutwgkaqwkb.supabase.co/storage/v1/object/public/product-media';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wclpchjxdglhinoazxmr.supabase.co';
+const SUPABASE_MEDIA = `${SUPABASE_URL}/storage/v1/object/public/product-media`;
 
 const STREAMING_VIDEOS: Record<string, string> = {
   'ai-reporting-platform': `${SUPABASE_MEDIA}/powerbi/application-analysis-report.mp4`,
@@ -131,7 +133,7 @@ const CustomDropdown = ({
 function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers' | 'iot'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers' | 'iot' | 'dashboards'>('projects');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [projects, setProjects] = useState<Product[]>([]);
@@ -736,6 +738,15 @@ function App() {
           >
             <Wifi className="w-5 h-5" /> IoT & Edge AI
           </button>
+          <button 
+            onClick={() => { setActiveTab('dashboards'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer 
+              activeTab === 'dashboards' ? 'bg-indigo-600/10 text-indigo-400' : 'hover:bg-slate-800/50 hover:text-white'
+            `}
+          >
+            <LayoutDashboard className="w-5 h-5" /> Live Dashboards
+            <span className="ml-auto text-[10px] font-bold bg-indigo-500 text-white rounded-full px-2 py-0.5">NEW</span>
+          </button>
 
           <div className="my-2 border-t border-slate-800" />
           
@@ -792,7 +803,7 @@ function App() {
               </button>
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
-                  {activeTab === 'leads' ? 'Leads & Inquiries' : activeTab === 'analytics' ? 'Visitor Analytics' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
+                  {activeTab === 'dashboards' ? 'Live Interactive Dashboards' : activeTab === 'leads' ? 'Leads & Inquiries' : activeTab === 'analytics' ? 'Visitor Analytics' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium hidden sm:block">
                   {activeTab === 'leads' 
@@ -805,7 +816,7 @@ function App() {
               </div>
             </div>
             {/* Add button - always visible on right */}
-            {activeTab !== 'leads' && activeTab !== 'analytics' && activeTab !== 'iot' && (
+            {activeTab !== 'leads' && activeTab !== 'analytics' && activeTab !== 'iot' && activeTab !== 'dashboards' && (
               <button 
                 onClick={handleOpenNewModal}
                 className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
@@ -829,7 +840,7 @@ function App() {
             )}
           </div>
           {/* Search bar - hidden on analytics and iot tabs */}
-          {activeTab !== 'analytics' && activeTab !== 'iot' && (
+          {activeTab !== 'analytics' && activeTab !== 'iot' && activeTab !== 'dashboards' && (
           <div className="px-4 sm:px-8 pb-3">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -852,6 +863,11 @@ function App() {
           {/* IoT View */}
           {activeTab === 'iot' && (
             <IoTEditor />
+          )}
+
+          {/* Live Dashboards Gallery View */}
+          {activeTab === 'dashboards' && (
+            <DashboardsManager />
           )}
 
           {/* Analytics View */}

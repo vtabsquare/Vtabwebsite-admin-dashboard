@@ -55,3 +55,30 @@ export interface IoTContent {
   updated_at?: string;
 }
 
+export interface MetricItem {
+  label: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down' | 'neutral';
+  subtext: string;
+}
+
+export interface DashboardEmbed {
+  id: string;
+  product_id: string;
+  title: string;
+  subtitle: string;
+  category: string;
+  embed_url: string;
+  timeframe: string;
+  report_type: string;
+  badge: string;
+  metrics: MetricItem[];
+  is_live_embed: boolean;
+  is_active: boolean;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
