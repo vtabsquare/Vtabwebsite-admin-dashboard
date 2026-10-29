@@ -12,6 +12,7 @@ export interface Product {
   iconName: string;
   featured?: boolean;
   imageUrl?: string;
+  embedUrl?: string;
   demoSnippet?: any;
   detailContent?: any;
 }

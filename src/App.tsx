@@ -30,7 +30,8 @@ import {
   Menu,
   Image as ImageIcon,
   ChevronDown,
-  BarChart2
+  BarChart2,
+  Globe
 } from 'lucide-react';
 import { Login } from './components/Login';
 
@@ -164,6 +165,7 @@ function App() {
     status?: string;
     videoUrl?: string;
     pptUrl?: string;
+    embedUrl?: string;
     imageUrl?: string;
     techStack?: string;
     challenge?: string;
@@ -209,6 +211,7 @@ function App() {
     status: 'In Development',
     videoUrl: '',
       pptUrl: '',
+    embedUrl: '',
     imageUrl: ''
   });
 
@@ -269,6 +272,7 @@ function App() {
             iconName: item.icon_name || item.iconName || 'Package',
             featured: item.featured ?? true,
             imageUrl: item.image_url || item.imageUrl,
+            embedUrl: item.detail_content?.embedUrl || item.detailContent?.embedUrl || demoSnippet?.embedUrl || item.embed_url || '',
             demoSnippet,
             detailContent
           };
@@ -370,6 +374,7 @@ function App() {
       status: 'In Development',
       videoUrl: '',
       pptUrl: '',
+      embedUrl: '',
       imageUrl: '',
       techStack: 'React, Node.js, Python, Supabase',
       challenge: 'Legacy manual operations cause delays\nHigh operational cost without automation\nLacks real-time data visibility',
@@ -434,6 +439,7 @@ function App() {
         impactMetric: item.impactMetric || item.impact_metric || '',
         videoUrl: existingVideo,
         pptUrl: detail.pptUrl || item.pptUrl || '',
+        embedUrl: detail.embedUrl || (item.demoSnippet as any)?.embedUrl || item.embedUrl || item.embed_url || '',
         techStack: techStackArr.join(', '),
         challenge: challengeArr.join('\n'),
         approach: detail.approach || item.fullDescription || item.full_description || '',
@@ -584,6 +590,7 @@ function App() {
           type: 'detailContent',
           videoUrl: formData.videoUrl || '',
           pptUrl: formData.pptUrl || '',
+          embedUrl: formData.embedUrl || '',
           approach: approachStr,
           challenge: challengeArr,
           features: featArr,
@@ -1030,7 +1037,15 @@ function App() {
                               <Package className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900">{item.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-slate-900">{item.title}</p>
+                                {(item.embedUrl || item.detailContent?.embedUrl || (item.demoSnippet as any)?.embedUrl) && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" title="Has interactive live iframe embed">
+                                    <Globe className="w-2.5 h-2.5 text-emerald-500" />
+                                    Live Embed
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-slate-500 truncate w-64">{item.shortDescription}</p>
                             </div>
                           </div>
@@ -1454,6 +1469,37 @@ function App() {
                         />
                       </label>
                     </div>
+                  </div>
+
+                  {/* Live Embedded Iframe Demo Section */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Globe className="w-4 h-4 text-emerald-600" />
+                        Interactive Live Demo / Iframe Embed URL (Optional)
+                      </label>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-300">
+                        Live Iframe
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Drop any live app or dashboard URL (e.g. Render, Streamlit, PowerBI, Grafana, custom web app) to automatically display an interactive live iframe container right below the hero section on this project's respective page.
+                    </p>
+                    <div>
+                      <input 
+                        type="url" 
+                        value={formData.embedUrl || ''}
+                        onChange={e => setFormData({...formData, embedUrl: e.target.value})}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs font-mono transition-all placeholder:text-slate-400"
+                        placeholder="https://your-live-demo-app.onrender.com or iframe URL..."
+                      />
+                    </div>
+                    {formData.embedUrl && (
+                      <div className="flex items-center gap-2 text-[11px] text-emerald-600 font-semibold bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <span className="truncate">Active Live Embed: {formData.embedUrl}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Explore Architecture & Specs Section Header */}
