@@ -16,7 +16,9 @@ import {
   Sliders,
   Copy,
   Check,
-  X
+  X,
+  FileText,
+  Upload
 } from 'lucide-react';
 
 const CATEGORY_PRESETS = [
@@ -79,9 +81,95 @@ export const DashboardsManager: React.FC = () => {
     display_order: 1
   });
 
+  // Reporting Platform PPT Deck State
+  const [pptUrl, setPptUrl] = useState<string>('');
+  const [isUploadingPpt, setIsUploadingPpt] = useState(false);
+  const [isSavingPpt, setIsSavingPpt] = useState(false);
+  const [pptCopied, setPptCopied] = useState(false);
+
   useEffect(() => {
     fetchDashboards();
+    fetchReportingPpt();
   }, []);
+
+  const fetchReportingPpt = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('demo_snippet, detail_content')
+        .eq('id', 'ai-reporting-platform')
+        .single();
+
+      if (error) {
+        console.warn('Error fetching reporting PPT:', error);
+        return;
+      }
+      const current = (data?.demo_snippet as { pptUrl?: string } | null)?.pptUrl 
+                   || (data?.detail_content as { pptUrl?: string } | null)?.pptUrl 
+                   || '';
+      setPptUrl(current);
+    } catch (e) {
+      console.warn('Could not fetch reporting PPT:', e);
+    }
+  };
+
+  const handlePptFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPpt(true);
+    try {
+      const cleanFileName = `presentations/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const { data, error } = await supabase.storage.from('product-media').upload(cleanFileName, file, {
+        upsert: true
+      });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(data.path);
+      setPptUrl(publicUrl);
+      // Auto-save immediately upon upload!
+      await savePptToDatabase(publicUrl);
+    } catch (err: any) {
+      console.error('PPT upload error:', err);
+      setMessage({ type: 'error', text: 'PPT upload failed: ' + (err.message || 'Unknown error') });
+    } finally {
+      setIsUploadingPpt(false);
+      e.target.value = '';
+    }
+  };
+
+  const savePptToDatabase = async (overrideUrl?: string) => {
+    const targetUrl = typeof overrideUrl === 'string' ? overrideUrl : pptUrl;
+    setIsSavingPpt(true);
+    try {
+      const { data: prod, error: fetchErr } = await supabase
+        .from('products')
+        .select('demo_snippet')
+        .eq('id', 'ai-reporting-platform')
+        .single();
+
+      if (fetchErr) throw fetchErr;
+
+      const existingSnippet = (prod?.demo_snippet as Record<string, any>) || {};
+      const updatedSnippet = { ...existingSnippet, pptUrl: targetUrl.trim() };
+
+      const { error: updateErr } = await supabase
+        .from('products')
+        .update({ demo_snippet: updatedSnippet })
+        .eq('id', 'ai-reporting-platform');
+
+      if (updateErr) throw updateErr;
+
+      setMessage({
+        type: 'success',
+        text: 'Reporting Platform Presentation (PPT) updated successfully and live on website!'
+      });
+    } catch (err: any) {
+      console.error('Error saving PPT:', err);
+      setMessage({ type: 'error', text: 'Failed to save PPT: ' + (err.message || 'Unknown error') });
+    } finally {
+      setIsSavingPpt(false);
+    }
+  };
 
   const fetchDashboards = async () => {
     setLoading(true);
@@ -329,6 +417,99 @@ export const DashboardsManager: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Reporting Platform Presentation (PPT / PDF) Section */}
+      <div className="bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center shrink-0 mt-0.5">
+              <FileText className="w-5 h-5 text-purple-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">Reporting Platform Presentation (PPT / PDF)</h3>
+                <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                  pptUrl 
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                }`}>
+                  {pptUrl ? '● Active on Website' : '○ Not Configured'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Upload or paste the presentation deck URL. The "Download PPT" button in the public reporting platform hero will fetch this file automatically.
+              </p>
+            </div>
+          </div>
+
+          {pptUrl && (
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              <a
+                href={pptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-purple-300 border border-purple-500/30 transition cursor-pointer"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Test Link</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(pptUrl);
+                  setPptCopied(true);
+                  setTimeout(() => setPptCopied(false), 2000);
+                }}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition cursor-pointer"
+                title="Copy URL"
+              >
+                {pptCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Inputs */}
+        <div className="flex flex-col md:flex-row items-stretch gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={pptUrl}
+              onChange={(e) => setPptUrl(e.target.value)}
+              placeholder="Paste presentation URL (e.g. Supabase storage link, Google Slides, OneDrive, SharePoint, etc.)"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-950/80 text-xs font-mono text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-600/80 text-xs font-semibold cursor-pointer transition">
+              {isUploadingPpt ? (
+                <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
+              ) : (
+                <Upload className="w-4 h-4 text-purple-400" />
+              )}
+              <span>{isUploadingPpt ? 'Uploading...' : 'Upload PPT/PDF'}</span>
+              <input
+                type="file"
+                accept=".ppt,.pptx,.pdf,.odp"
+                onChange={handlePptFileUpload}
+                disabled={isUploadingPpt}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => savePptToDatabase()}
+              disabled={isSavingPpt || isUploadingPpt}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-purple-600/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              {isSavingPpt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              <span>{isSavingPpt ? 'Saving...' : 'Save Presentation'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Dashboards Table / List */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
