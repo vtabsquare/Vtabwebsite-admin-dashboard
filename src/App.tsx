@@ -4,6 +4,9 @@ import type { Product } from './types';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { IoTEditor } from './components/IoTEditor';
 import { DashboardsManager } from './components/DashboardsManager';
+import { FiveScreenArchitectureEditor } from './components/FiveScreenArchitectureEditor';
+import type { FiveScreenArchitectureData } from './types/architecture';
+import { createDefaultArchitectureTemplate } from './data/defaultArchitectureTemplate';
 import { 
   Wifi,
   LayoutDashboard, 
@@ -185,6 +188,8 @@ function App() {
     benchmark3Val?: string;
     benchmark3Label?: string;
     benchmark3Desc?: string;
+    // 5-Screen Architecture Suite
+    architectureData?: FiveScreenArchitectureData;
     // Innovations
     tagline?: string;
     highlights?: string;
@@ -394,6 +399,8 @@ function App() {
       benchmark3Val: '10x',
       benchmark3Label: 'Throughput Scaling',
       benchmark3Desc: 'Auto-scaling worker pods handling burst data ingestion spikes.',
+      // 5-Screen Architecture Suite
+      architectureData: createDefaultArchitectureTemplate('', 'Enterprise Automation'),
       // Innovations
       tagline: '',
       highlights: '',
@@ -431,6 +438,33 @@ function App() {
       const techStackArr: string[] = item.techStack || item.tech_stack || ['React', 'Node.js', 'Python', 'Supabase'];
       const challengeArr: string[] = detail.challenge || ['Legacy manual operations cause delays', 'High operational cost without automation'];
 
+      // 5-Screen Architecture Data
+      const architectureData: FiveScreenArchitectureData = detail.architectureData || {
+        topBadge: detail.topBadge || `${(item.title || 'PROJECT').toUpperCase()} SUITE · V2.4.1 PRODUCTION`,
+        eyebrow: detail.eyebrow || 'END-TO-END PIPELINE ARCHITECTURE',
+        pipelineHeadline: detail.pipelineHeadline || `Engineered for the complete ${(item.title || 'project').toLowerCase()} lifecycle.`,
+        pipelineDescription: detail.pipelineDescription || (item.shortDescription || item.short_description || ''),
+        pipelineStages: detail.pipelineStages || [],
+        capabilitiesHeadline: detail.capabilitiesHeadline || `Interactive ${(item.title || 'project').toLowerCase()} capabilities.`,
+        capabilitiesDescription: detail.capabilitiesDescription || '',
+        capabilities: detail.capabilities || [],
+        deepDiveHeadline: detail.deepDiveHeadline || 'Engineered layer by layer for security, compliance, and real-time speed.',
+        deepDiveDescription: detail.deepDiveDescription || '',
+        deepDiveLayers: detail.deepDiveLayers || [],
+        editionsHeadline: detail.editionsHeadline || 'Enterprise deployment options tailored to your infrastructure.',
+        editionsDescription: detail.editionsDescription || '',
+        editions: detail.editions || []
+      };
+
+      // If architecture stages are empty, pre-seed with default template
+      if (!architectureData.pipelineStages || architectureData.pipelineStages.length === 0) {
+        const seeded = createDefaultArchitectureTemplate(item.title, item.category);
+        architectureData.pipelineStages = seeded.pipelineStages;
+        architectureData.capabilities = seeded.capabilities;
+        architectureData.deepDiveLayers = seeded.deepDiveLayers;
+        architectureData.editions = seeded.editions;
+      }
+
       setFormData({
         title: item.title || '',
         description: item.shortDescription || item.short_description || '',
@@ -459,7 +493,8 @@ function App() {
         benchmark3Label: benchmarks[2]?.label || 'Throughput Scaling',
         benchmark3Desc: benchmarks[2]?.desc || '',
         featured: item.featured ?? true,
-        imageUrl: item.imageUrl || item.image_url || ''
+        imageUrl: item.imageUrl || item.image_url || '',
+        architectureData
       });
     } else if (activeTab === 'employees') {
       const capArr: string[] = Array.isArray(item.capabilities) ? item.capabilities : (typeof item.capabilities === 'string' ? JSON.parse(item.capabilities || '[]') : []);
@@ -573,6 +608,8 @@ function App() {
         { val: formData.benchmark3Val || '10x', label: formData.benchmark3Label || 'Throughput Scaling', desc: formData.benchmark3Desc || 'Auto-scaling worker pods handling burst data ingestion spikes.' }
       ];
 
+      const arch = formData.architectureData || createDefaultArchitectureTemplate(formData.title || '', formData.category || '');
+
       payload = {
         title: formData.title,
         short_description: formData.description,
@@ -595,7 +632,23 @@ function App() {
           challenge: challengeArr,
           features: featArr,
           benchmarks: bmArr,
-          impact: [formData.impactMetric || '10x Faster Operations', '99.9% Uptime Reliability']
+          impact: [formData.impactMetric || '10x Faster Operations', '99.9% Uptime Reliability'],
+          // 5-Screen Architecture Suite Fields
+          architectureData: arch,
+          topBadge: arch.topBadge,
+          eyebrow: arch.eyebrow,
+          pipelineHeadline: arch.pipelineHeadline,
+          pipelineDescription: arch.pipelineDescription,
+          pipelineStages: arch.pipelineStages,
+          capabilitiesHeadline: arch.capabilitiesHeadline,
+          capabilitiesDescription: arch.capabilitiesDescription,
+          capabilities: arch.capabilities,
+          deepDiveHeadline: arch.deepDiveHeadline,
+          deepDiveDescription: arch.deepDiveDescription,
+          deepDiveLayers: arch.deepDiveLayers,
+          editionsHeadline: arch.editionsHeadline,
+          editionsDescription: arch.editionsDescription,
+          editions: arch.editions
         }
       };
       if (!editingId) payload.id = id;
@@ -1502,167 +1555,13 @@ function App() {
                     )}
                   </div>
 
-                  {/* Explore Architecture & Specs Section Header */}
-                  <div className="pt-3 border-t border-slate-200 space-y-4">
-                    <h3 className="text-xs font-extrabold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
-                      Explore Architecture & Deep-Dive Specs Configuration
-                    </h3>
-
-                    {/* The Challenge */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">The Challenge / Problem Statement (One bullet per line)</label>
-                      <textarea 
-                        rows={2}
-                        value={formData.challenge || ''}
-                        onChange={e => setFormData({...formData, challenge: e.target.value})}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs font-medium transition-all"
-                        placeholder="Legacy manual operations cause delays&#10;High operational cost without automation"
-                      />
-                    </div>
-
-                    {/* The Approach */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">The Approach / Technical Solution</label>
-                      <textarea 
-                        rows={2}
-                        value={formData.approach || ''}
-                        onChange={e => setFormData({...formData, approach: e.target.value})}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs font-medium transition-all"
-                        placeholder="Detail the technical architecture and solution approach..."
-                      />
-                    </div>
-
-                    {/* Core System Capabilities / Features */}
-                    <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">System Intelligence & Features (3 Cards)</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                          <input 
-                            type="text" 
-                            value={formData.feature1Title || ''}
-                            onChange={e => setFormData({...formData, feature1Title: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold"
-                            placeholder="Feature 1 Title"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.feature1Desc || ''}
-                            onChange={e => setFormData({...formData, feature1Desc: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px]"
-                            placeholder="Feature 1 Description"
-                          />
-                        </div>
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                          <input 
-                            type="text" 
-                            value={formData.feature2Title || ''}
-                            onChange={e => setFormData({...formData, feature2Title: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold"
-                            placeholder="Feature 2 Title"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.feature2Desc || ''}
-                            onChange={e => setFormData({...formData, feature2Desc: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px]"
-                            placeholder="Feature 2 Description"
-                          />
-                        </div>
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                          <input 
-                            type="text" 
-                            value={formData.feature3Title || ''}
-                            onChange={e => setFormData({...formData, feature3Title: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold"
-                            placeholder="Feature 3 Title"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.feature3Desc || ''}
-                            onChange={e => setFormData({...formData, feature3Desc: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px]"
-                            placeholder="Feature 3 Description"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Benchmarks & SLA */}
-                    <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Architecture Benchmarks & Specs (3 Metrics)</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                          <input 
-                            type="text" 
-                            value={formData.benchmark1Val || ''}
-                            onChange={e => setFormData({...formData, benchmark1Val: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-extrabold text-blue-600"
-                            placeholder="e.g. < 15 ms"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.benchmark1Label || ''}
-                            onChange={e => setFormData({...formData, benchmark1Label: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold"
-                            placeholder="Label (e.g. API Latency)"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.benchmark1Desc || ''}
-                            onChange={e => setFormData({...formData, benchmark1Desc: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px]"
-                            placeholder="Description"
-                          />
-                        </div>
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                          <input 
-                            type="text" 
-                            value={formData.benchmark2Val || ''}
-                            onChange={e => setFormData({...formData, benchmark2Val: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-extrabold text-emerald-600"
-                            placeholder="e.g. 99.99%"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.benchmark2Label || ''}
-                            onChange={e => setFormData({...formData, benchmark2Label: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold"
-                            placeholder="Label (e.g. Uptime SLA)"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.benchmark2Desc || ''}
-                            onChange={e => setFormData({...formData, benchmark2Desc: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px]"
-                            placeholder="Description"
-                          />
-                        </div>
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                          <input 
-                            type="text" 
-                            value={formData.benchmark3Val || ''}
-                            onChange={e => setFormData({...formData, benchmark3Val: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-extrabold text-purple-600"
-                            placeholder="e.g. 10x"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.benchmark3Label || ''}
-                            onChange={e => setFormData({...formData, benchmark3Label: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold"
-                            placeholder="Label (e.g. Scaling)"
-                          />
-                          <input 
-                            type="text" 
-                            value={formData.benchmark3Desc || ''}
-                            onChange={e => setFormData({...formData, benchmark3Desc: e.target.value})}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px]"
-                            placeholder="Description"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* 5-Screen Architecture Presentation Suite Component */}
+                  <FiveScreenArchitectureEditor
+                    data={formData.architectureData || createDefaultArchitectureTemplate(formData.title || '', formData.category || '')}
+                    onChange={arch => setFormData({ ...formData, architectureData: arch })}
+                    projectTitle={formData.title || ''}
+                    projectCategory={formData.category || ''}
+                  />
                 </>
               )}
 
