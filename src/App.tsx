@@ -34,12 +34,18 @@ import {
   Image as ImageIcon,
   ChevronDown,
   BarChart2,
+  BarChart3,
   Globe
 } from 'lucide-react';
 import { Login } from './components/Login';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wclpchjxdglhinoazxmr.supabase.co';
 const SUPABASE_MEDIA = `${SUPABASE_URL}/storage/v1/object/public/product-media`;
+
+const isBiDashboard = (p: Product) => {
+  const cat = (p.category || '').toLowerCase();
+  return cat.includes('bi dashboard') || cat.includes('bi dashboards') || p.id.includes('dashboard') || p.id.includes('analysis-report');
+};
 
 const STREAMING_VIDEOS: Record<string, string> = {
   'ai-reporting-platform': `${SUPABASE_MEDIA}/powerbi/application-analysis-report.mp4`,
@@ -137,7 +143,7 @@ const CustomDropdown = ({
 function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'projects' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers' | 'iot' | 'dashboards'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'bi-dashboards' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers' | 'iot' | 'dashboards'>('projects');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [projects, setProjects] = useState<Product[]>([]);
@@ -243,7 +249,7 @@ function App() {
 
   const fetchData = async () => {
     setLoading(true);
-    if (activeTab === 'projects') {
+    if (activeTab === 'projects' || activeTab === 'bi-dashboards') {
       const { data, error } = await supabase.from('products').select('*').order('id', { ascending: true });
       if (!error && data) {
         const mappedProducts: Product[] = data.map(item => {
@@ -371,7 +377,7 @@ function App() {
     setFormData({
       title: '',
       description: '',
-      category: 'Analytics & BI',
+      category: activeTab === 'bi-dashboards' ? 'BI dashboards' : 'Enterprise Automation',
       subcategory: '',
       impactMetric: '',
       featured: true,
@@ -422,7 +428,7 @@ function App() {
 
   const handleEdit = (item: any) => {
     setEditingId(item.id);
-    if (activeTab === 'projects') {
+    if (activeTab === 'projects' || activeTab === 'bi-dashboards') {
       const existingVideo = item.detailContent?.videoUrl || (item.demoSnippet as any)?.videoUrl || STREAMING_VIDEOS[item.id] || '';
       const detail: any = item.detailContent || item.demoSnippet || {};
       const features: any[] = detail.features || item.keyFeatures || [
@@ -592,7 +598,7 @@ function App() {
     let table = 'products';
     let payload: any = {};
 
-    if (activeTab === 'projects') {
+    if (activeTab === 'projects' || activeTab === 'bi-dashboards') {
       table = 'products';
       const techStackArr = formData.techStack ? formData.techStack.split(',').map(s => s.trim()).filter(Boolean) : ['React', 'Node.js', 'Python', 'Supabase'];
       const challengeArr = formData.challenge ? formData.challenge.split('\n').map(s => s.trim()).filter(Boolean) : ['Legacy manual operations cause delays', 'High operational cost without automation'];
@@ -764,7 +770,15 @@ function App() {
               activeTab === 'projects' ? 'bg-blue-600/10 text-blue-400' : 'hover:bg-slate-800/50 hover:text-white'
             }`}
           >
-            <Package className="w-5 h-5" /> Projects
+            <Package className="w-5 h-5" /> Applications
+          </button>
+          <button 
+            onClick={() => { setActiveTab('bi-dashboards'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
+              activeTab === 'bi-dashboards' ? 'bg-blue-600/10 text-blue-400' : 'hover:bg-slate-800/50 hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5" /> BI Dashboards
           </button>
           <button 
             onClick={() => { setActiveTab('employees'); setSidebarOpen(false); }}
@@ -863,13 +877,17 @@ function App() {
               </button>
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
-                  {activeTab === 'dashboards' ? 'Live Interactive Dashboards' : activeTab === 'leads' ? 'Leads & Inquiries' : activeTab === 'analytics' ? 'Visitor Analytics' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
+                  {activeTab === 'dashboards' ? 'Live Interactive Dashboards' : activeTab === 'bi-dashboards' ? 'BI Dashboards Directory' : activeTab === 'projects' ? 'Applications Directory' : activeTab === 'leads' ? 'Leads & Inquiries' : activeTab === 'analytics' ? 'Visitor Analytics' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium hidden sm:block">
                   {activeTab === 'leads' 
                     ? `${leads.length} total leads — demo bookings & newsletter subscribers`
                     : activeTab === 'analytics'
                     ? 'Real-time visitor insights from www.vtabsquare.com'
+                    : activeTab === 'bi-dashboards'
+                    ? 'Manage your VTAB Square Power BI & business intelligence reports'
+                    : activeTab === 'projects'
+                    ? 'Manage your VTAB Square software applications and AI agents'
                     : `Manage your VTAB Square ${activeTab} portfolio`
                   }
                 </p>
@@ -882,7 +900,7 @@ function App() {
                 className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">New {activeTab === 'projects' ? 'Project' : activeTab === 'employees' ? 'Employee' : 'Innovation'}</span>
+                <span className="hidden sm:inline">New {activeTab === 'bi-dashboards' ? 'BI Dashboard' : activeTab === 'projects' ? 'Application' : activeTab === 'employees' ? 'Employee' : 'Innovation'}</span>
                 <span className="sm:hidden">New</span>
               </button>
             )}
@@ -906,7 +924,7 @@ function App() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text" 
-                placeholder={activeTab === 'leads' ? 'Search leads...' : `Search ${activeTab}...`}
+                placeholder={activeTab === 'leads' ? 'Search leads...' : activeTab === 'bi-dashboards' ? 'Search BI dashboards...' : activeTab === 'projects' ? 'Search applications...' : `Search ${activeTab}...`}
                 value={activeTab === 'leads' ? leadsSearch : undefined}
                 onChange={activeTab === 'leads' ? e => setLeadsSearch(e.target.value) : undefined}
                 className="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full transition-all"
@@ -1067,7 +1085,7 @@ function App() {
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
                   <th className="px-6 py-4">Title</th>
-                  {activeTab === 'projects' && <th className="px-6 py-4">Category</th>}
+                  {(activeTab === 'projects' || activeTab === 'bi-dashboards') && <th className="px-6 py-4">Category</th>}
                   {activeTab === 'employees' && <th className="px-6 py-4">Role</th>}
                   {activeTab === 'innovations' && <th className="px-6 py-4">Status</th>}
                   {activeTab === 'careers' && <th className="px-6 py-4">Department</th>}
@@ -1078,16 +1096,18 @@ function App() {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-medium">Loading database...</td></tr>
-                ) : (activeTab === 'projects' && projects.length === 0) || (activeTab === 'employees' && employees.length === 0) || (activeTab === 'innovations' && innovations.length === 0) || (activeTab === 'careers' && careers.length === 0) ? (
+                ) : ((activeTab === 'projects' && projects.filter(p => !isBiDashboard(p)).length === 0) || (activeTab === 'bi-dashboards' && projects.filter(p => isBiDashboard(p)).length === 0)) || (activeTab === 'employees' && employees.length === 0) || (activeTab === 'innovations' && innovations.length === 0) || (activeTab === 'careers' && careers.length === 0) ? (
                   <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-medium">No records found.</td></tr>
                 ) : (
                   <>
-                    {activeTab === 'projects' && projects.map((item) => (
+                    {(activeTab === 'projects' || activeTab === 'bi-dashboards') && projects
+                      .filter(item => activeTab === 'bi-dashboards' ? isBiDashboard(item) : !isBiDashboard(item))
+                      .map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100">
-                              <Package className="w-5 h-5 text-blue-600" />
+                              {activeTab === 'bi-dashboards' ? <BarChart3 className="w-5 h-5 text-blue-600" /> : <Package className="w-5 h-5 text-blue-600" />}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
@@ -1234,10 +1254,10 @@ function App() {
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
         >
-          <div className={`bg-white rounded-3xl shadow-2xl w-full ${activeTab === 'projects' ? 'max-w-3xl' : 'max-w-lg'} overflow-hidden border border-slate-200/50 max-h-[90vh] flex flex-col`}>
+          <div className={`bg-white rounded-3xl shadow-2xl w-full ${(activeTab === 'projects' || activeTab === 'bi-dashboards') ? 'max-w-3xl' : 'max-w-lg'} overflow-hidden border border-slate-200/50 max-h-[90vh] flex flex-col`}>
             <div className="px-4 sm:px-8 py-5 sm:py-6 border-b border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between relative">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Record' : `Add New ${activeTab === 'projects' ? 'Project' : activeTab === 'employees' ? 'AI Employee' : activeTab === 'careers' ? 'Career Role' : 'Innovation'}`}</h2>
+                <h2 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Record' : `Add New ${activeTab === 'bi-dashboards' ? 'BI Dashboard' : activeTab === 'projects' ? 'Application' : activeTab === 'employees' ? 'AI Employee' : activeTab === 'careers' ? 'Career Role' : 'Innovation'}`}</h2>
                 <p className="text-sm text-slate-500 mt-1">{editingId ? 'Update existing details in database' : 'Deploy a new item to your public website'}</p>
               </div>
               <button 
@@ -1275,7 +1295,7 @@ function App() {
                 />
               </div>
 
-              {activeTab === 'projects' && (
+              {(activeTab === 'projects' || activeTab === 'bi-dashboards') && (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
