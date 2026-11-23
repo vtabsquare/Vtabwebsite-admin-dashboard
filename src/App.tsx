@@ -4,6 +4,7 @@ import type { Product } from './types';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { IoTEditor } from './components/IoTEditor';
 import { DashboardsManager } from './components/DashboardsManager';
+import { BannersManager } from './components/BannersManager';
 import { FiveScreenArchitectureEditor } from './components/FiveScreenArchitectureEditor';
 import type { FiveScreenArchitectureData } from './types/architecture';
 import { createDefaultArchitectureTemplate } from './data/defaultArchitectureTemplate';
@@ -35,7 +36,8 @@ import {
   ChevronDown,
   BarChart2,
   BarChart3,
-  Globe
+  Globe,
+  Megaphone
 } from 'lucide-react';
 import { Login } from './components/Login';
 
@@ -143,7 +145,7 @@ const CustomDropdown = ({
 function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'projects' | 'bi-dashboards' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers' | 'iot' | 'dashboards'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'bi-dashboards' | 'employees' | 'innovations' | 'leads' | 'analytics' | 'careers' | 'iot' | 'dashboards' | 'banners'>('projects');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [projects, setProjects] = useState<Product[]>([]);
@@ -821,6 +823,15 @@ function App() {
             <LayoutDashboard className="w-5 h-5" /> Live Dashboards
             <span className="ml-auto text-[10px] font-bold bg-indigo-500 text-white rounded-full px-2 py-0.5">NEW</span>
           </button>
+          <button 
+            onClick={() => { setActiveTab('banners'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${
+              activeTab === 'banners' ? 'bg-fuchsia-600/10 text-fuchsia-400' : 'hover:bg-slate-800/50 hover:text-white'
+            }`}
+          >
+            <Megaphone className="w-5 h-5" /> Hero Banners
+            <span className="ml-auto text-[10px] font-bold bg-fuchsia-500 text-white rounded-full px-2 py-0.5">NEW</span>
+          </button>
 
           <div className="my-2 border-t border-slate-800" />
           
@@ -877,10 +888,12 @@ function App() {
               </button>
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
-                  {activeTab === 'dashboards' ? 'Live Interactive Dashboards' : activeTab === 'bi-dashboards' ? 'BI Dashboards Directory' : activeTab === 'projects' ? 'Applications Directory' : activeTab === 'leads' ? 'Leads & Inquiries' : activeTab === 'analytics' ? 'Visitor Analytics' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
+                  {activeTab === 'banners' ? 'Hero Announcement Banners' : activeTab === 'dashboards' ? 'Live Interactive Dashboards' : activeTab === 'bi-dashboards' ? 'BI Dashboards Directory' : activeTab === 'projects' ? 'Applications Directory' : activeTab === 'leads' ? 'Leads & Inquiries' : activeTab === 'analytics' ? 'Visitor Analytics' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Directory`}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium hidden sm:block">
-                  {activeTab === 'leads' 
+                  {activeTab === 'banners'
+                    ? 'Customize the neon glowing announcement banners rotated on the company website'
+                    : activeTab === 'leads' 
                     ? `${leads.length} total leads — demo bookings & newsletter subscribers`
                     : activeTab === 'analytics'
                     ? 'Real-time visitor insights from www.vtabsquare.com'
@@ -894,7 +907,7 @@ function App() {
               </div>
             </div>
             {/* Add button - always visible on right */}
-            {activeTab !== 'leads' && activeTab !== 'analytics' && activeTab !== 'iot' && activeTab !== 'dashboards' && (
+            {activeTab !== 'leads' && activeTab !== 'analytics' && activeTab !== 'iot' && activeTab !== 'dashboards' && activeTab !== 'banners' && (
               <button 
                 onClick={handleOpenNewModal}
                 className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
@@ -917,8 +930,8 @@ function App() {
               </div>
             )}
           </div>
-          {/* Search bar - hidden on analytics and iot tabs */}
-          {activeTab !== 'analytics' && activeTab !== 'iot' && activeTab !== 'dashboards' && (
+          {/* Search bar - hidden on analytics, iot, dashboards, and banners tabs */}
+          {activeTab !== 'analytics' && activeTab !== 'iot' && activeTab !== 'dashboards' && activeTab !== 'banners' && (
           <div className="px-4 sm:px-8 pb-3">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -946,6 +959,11 @@ function App() {
           {/* Live Dashboards Gallery View */}
           {activeTab === 'dashboards' && (
             <DashboardsManager />
+          )}
+
+          {/* Announcement Banners View */}
+          {activeTab === 'banners' && (
+            <BannersManager />
           )}
 
           {/* Analytics View */}

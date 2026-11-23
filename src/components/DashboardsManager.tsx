@@ -177,6 +177,7 @@ export const DashboardsManager: React.FC = () => {
       const { data, error } = await supabase
         .from('product_dashboards')
         .select('*')
+        .neq('category', 'announcement_banner')
         .order('display_order', { ascending: true });
 
       if (error) throw error;
