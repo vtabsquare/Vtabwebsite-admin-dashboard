@@ -45,6 +45,11 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wclpchjxdglhi
 const SUPABASE_MEDIA = `${SUPABASE_URL}/storage/v1/object/public/product-media`;
 
 const isBiDashboard = (p: Product) => {
+  const id = (p.id || '').toLowerCase();
+  const title = (p.title || '').toLowerCase();
+  if (id === 'ai-reporting-platform' || title.includes('ai reporting platform')) {
+    return false;
+  }
   const cat = (p.category || '').toLowerCase();
   return cat.includes('bi dashboard') || cat.includes('bi dashboards') || p.id.includes('dashboard') || p.id.includes('analysis-report');
 };
@@ -254,30 +259,46 @@ function App() {
     if (activeTab === 'projects' || activeTab === 'bi-dashboards') {
       const { data, error } = await supabase.from('products').select('*').order('id', { ascending: true });
       if (!error && data) {
-        const mappedProducts: Product[] = data.map(item => {
-          let demoSnippet: any = item.demo_snippet || item.demoSnippet;
-          if (typeof demoSnippet === 'string') {
-            try { demoSnippet = JSON.parse(demoSnippet); } catch(e) {}
-          }
+        const mappedProducts: Product[] = data
+          .filter(item => {
+            const id = (item.id || '').toLowerCase();
+            const title = (item.title || '').toLowerCase();
+            // Completely remove Sentinel and duplicate Vtab Reporting tool (insight-ai) from admin
+            if (id.includes('sentinel') || title.includes('sentinel')) return false;
+            if (id === 'insight-ai' || title === 'vtab reporting tool') return false;
+            return true;
+          })
+          .map(item => {
+            let category = item.category;
+            let subcategory = item.subcategory || '';
+            if (item.id === 'ai-reporting-platform' || (item.title || '').toLowerCase().includes('ai reporting platform')) {
+              category = 'Enterprise Automation';
+              subcategory = '';
+            }
 
-          let detailContent: any = item.detail_content || item.detailContent;
-          if (typeof detailContent === 'string') {
-            try { detailContent = JSON.parse(detailContent); } catch(e) {}
-          }
+            let demoSnippet: any = item.demo_snippet || item.demoSnippet;
+            if (typeof demoSnippet === 'string') {
+              try { demoSnippet = JSON.parse(demoSnippet); } catch(e) {}
+            }
 
-          if (!detailContent && demoSnippet && demoSnippet.type === 'detailContent') {
-            detailContent = { ...demoSnippet };
-            delete detailContent.type;
-            demoSnippet = undefined;
-          }
+            let detailContent: any = item.detail_content || item.detailContent;
+            if (typeof detailContent === 'string') {
+              try { detailContent = JSON.parse(detailContent); } catch(e) {}
+            }
 
-          return {
-            id: item.id,
-            title: item.title,
-            shortDescription: item.short_description || item.shortDescription || '',
-            fullDescription: item.full_description || item.fullDescription || '',
-            category: item.category,
-            subcategory: item.subcategory || '',
+            if (!detailContent && demoSnippet && demoSnippet.type === 'detailContent') {
+              detailContent = { ...demoSnippet };
+              delete detailContent.type;
+              demoSnippet = undefined;
+            }
+
+            return {
+              id: item.id,
+              title: item.title,
+              shortDescription: item.short_description || item.shortDescription || '',
+              fullDescription: item.full_description || item.fullDescription || '',
+              category,
+              subcategory,
             tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : item.tags || [],
             impactMetric: item.impact_metric || item.impactMetric || '',
             keyFeatures: typeof item.key_features === 'string' ? JSON.parse(item.key_features) : item.keyFeatures || item.key_features || [],
