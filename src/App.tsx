@@ -41,9 +41,6 @@ import {
 } from 'lucide-react';
 import { Login } from './components/Login';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wclpchjxdglhinoazxmr.supabase.co';
-const SUPABASE_MEDIA = `${SUPABASE_URL}/storage/v1/object/public/product-media`;
-
 const isBiDashboard = (p: Product) => {
   const id = (p.id || '').toLowerCase();
   const title = (p.title || '').toLowerCase();
@@ -52,26 +49,6 @@ const isBiDashboard = (p: Product) => {
   }
   const cat = (p.category || '').toLowerCase();
   return cat.includes('bi dashboard') || cat.includes('bi dashboards') || p.id.includes('dashboard') || p.id.includes('analysis-report');
-};
-
-const STREAMING_VIDEOS: Record<string, string> = {
-  'ai-reporting-platform': `${SUPABASE_MEDIA}/powerbi/application-analysis-report.mp4`,
-  'qlik-to-powerbi-migration': `${SUPABASE_MEDIA}/qlik2powerbi.mp4`,
-  'gbti-smart-home-builder': `${SUPABASE_MEDIA}/buildsmart.mp4`,
-  'buildsmart-estimator': `${SUPABASE_MEDIA}/buildsmart.mp4`,
-  'faceauth': `${SUPABASE_MEDIA}/faceauth.mp4`,
-  'packaging-optimization-platform': `${SUPABASE_MEDIA}/l1_agent.mp4`,
-  'ai-l1-support-agent': `${SUPABASE_MEDIA}/l1_agent.mp4`,
-  'postgresql-to-sqlserver-migration': `${SUPABASE_MEDIA}/qlik2powerbi.mp4`,
-  'all-phase-dashboard': `${SUPABASE_MEDIA}/powerbi/e-grow-analysis-dashboard.mp4`,
-  'application-analysis-report': `${SUPABASE_MEDIA}/powerbi/application-analysis-report.mp4`,
-  'e-grow-analysis-dashboard': `${SUPABASE_MEDIA}/powerbi/e-grow-analysis-dashboard.mp4`,
-  'google-analytics-dashboard': `${SUPABASE_MEDIA}/powerbi/google-analytics-dashboard.mp4`,
-  'hva-score-analysis-dashboard': `${SUPABASE_MEDIA}/powerbi/hva-score-analysis-dashboard.mp4`,
-  'final-quality-inspection-dashboard': `${SUPABASE_MEDIA}/powerbi/final-quality-inspection-dashboard.mp4`,
-  'food-inspection-dashboard': `${SUPABASE_MEDIA}/powerbi/food-inspection-dashboard.mp4`,
-  'energy-consumption-dashboard': `${SUPABASE_MEDIA}/powerbi/energy-consumption-dashboard.mp4`,
-  'hr-analytics-dashboard': `${SUPABASE_MEDIA}/powerbi/google-analytics-dashboard.mp4`,
 };
 
 const CustomDropdown = ({
@@ -452,7 +429,7 @@ function App() {
   const handleEdit = (item: any) => {
     setEditingId(item.id);
     if (activeTab === 'projects' || activeTab === 'bi-dashboards') {
-      const existingVideo = item.detailContent?.videoUrl || (item.demoSnippet as any)?.videoUrl || STREAMING_VIDEOS[item.id] || '';
+      const existingVideo = item.detailContent?.videoUrl || (item.demoSnippet as any)?.videoUrl || '';
       const detail: any = item.detailContent || item.demoSnippet || {};
       const features: any[] = detail.features || item.keyFeatures || [
         { title: 'Real-time AI Processing', description: 'Processes data with sub-second latency.' },
@@ -576,23 +553,6 @@ function App() {
     } else if (data) {
       const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(data.path);
       setFormData({ ...formData, pptUrl: publicUrl });
-    }
-    setIsUploading(false);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setIsUploading(true);
-    const fileName = `custom/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const { data, error } = await supabase.storage.from('product-media').upload(fileName, file);
-    
-    if (error) {
-      alert('Upload failed: ' + error.message);
-    } else if (data) {
-      const { data: { publicUrl } } = supabase.storage.from('product-media').getPublicUrl(data.path);
-      setFormData({ ...formData, videoUrl: publicUrl });
     }
     setIsUploading(false);
   };
@@ -1493,7 +1453,7 @@ function App() {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Video className="w-4 h-4 text-blue-600" />
-                      Project Demo Video
+                      Project Demo Video (YouTube Embed Link)
                     </label>
 
                     <div>
@@ -1502,38 +1462,13 @@ function App() {
                         value={formData.videoUrl || ''}
                         onChange={e => setFormData({...formData, videoUrl: e.target.value})}
                         className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono transition-all placeholder:text-slate-400"
-                        placeholder="Paste video URL (MP4/Supabase Media URL)..."
+                        placeholder="Paste YouTube link (https://www.youtube.com/watch?v=... or https://youtu.be/...)"
                       />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400 font-medium">OR</span>
-                      <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white border border-dashed border-slate-300 hover:border-blue-500 rounded-lg text-xs font-semibold text-slate-600 hover:text-blue-600 cursor-pointer transition-all">
-                        {isUploading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                            <span>Uploading to Storage...</span>
-                          </>
-                        ) : formData.videoUrl ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            <span className="truncate max-w-[180px]">Video Attached</span>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4" />
-                            <span>Upload MP4 File</span>
-                          </>
-                        )}
-                        <input 
-                          type="file" 
-                          accept="video/*" 
-                          onChange={handleFileUpload} 
-                          disabled={isUploading}
-                          className="hidden" 
-                        />
-                      </label>
-                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Paste an unlisted YouTube video URL. Videos stream directly from YouTube with zero Supabase bandwidth usage.
+                    </p>
                   </div>
 
                   {/* PPT Upload / URL Section */}
@@ -1549,7 +1484,7 @@ function App() {
                         value={formData.pptUrl || ''}
                         onChange={e => setFormData({...formData, pptUrl: e.target.value})}
                         className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none text-xs font-mono transition-all placeholder:text-slate-400"
-                        placeholder="Paste URL or upload file..."
+                        placeholder="Paste Google Drive, OneDrive, or SharePoint link..."
                       />
                     </div>
 
